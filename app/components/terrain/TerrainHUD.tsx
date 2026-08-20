@@ -1,6 +1,7 @@
 "use client";
 
-import type { Route, TerrainPoint } from "./types";
+import type { Route, RouteOptimization, TerrainPoint } from "./types";
+import RoutePlanner from "./RoutePlanner";
 
 type TerrainHUDProps = {
   hoveredPoint: TerrainPoint | null;
@@ -16,6 +17,16 @@ type TerrainHUDProps = {
 
   onCreateRoute: () => void;
   onClearRoute: () => void;
+  routeSelectionMode: "start" | "end" | null;
+  setRouteSelectionMode: (mode: "start" | "end" | null) => void;
+
+  startPoint: TerrainPoint | null;
+  endPoint: TerrainPoint | null;
+
+  optimization: RouteOptimization;
+  setOptimization: (optimization: RouteOptimization) => void;
+
+  onGenerateRoute: () => void;
 };
 
 export default function TerrainHUD({
@@ -28,6 +39,15 @@ export default function TerrainHUD({
   routeDistance,
   onCreateRoute,
   onClearRoute,
+
+  routeSelectionMode,
+  setRouteSelectionMode,
+  startPoint,
+  endPoint,
+
+  optimization,
+  setOptimization,
+  onGenerateRoute,
 }: TerrainHUDProps) {
   const activeRoute = routes.find((route) => route.id === activeRouteId);
 
@@ -176,6 +196,15 @@ export default function TerrainHUD({
           </button>
         </section>
       )}
+      <RoutePlanner
+        mode={routeSelectionMode}
+        setMode={setRouteSelectionMode}
+        startPointExists={startPoint !== null}
+        endPointExists={endPoint !== null}
+        optimization={optimization}
+        setOptimization={setOptimization}
+        onGenerateRoute={onGenerateRoute}
+      />
     </aside>
   );
 }

@@ -30,3 +30,32 @@ export type Route = {
   color: string;
   points: TerrainPoint[];
 };
+
+export type RouteOptimization = "shortest" | "safest" | "longest" | "balanced";
+
+export type NavigationNode = {
+  x: number;
+  y: number;
+  z: number;
+
+  row: number;
+  col: number;
+
+  elevation: number;
+  slope: number;
+
+  walkable: boolean;
+};
+
+export type NavigationGrid = {
+  nodes: NavigationNode[][];
+  rows: number;
+  cols: number;
+
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+
+  cellSize: number;
+};

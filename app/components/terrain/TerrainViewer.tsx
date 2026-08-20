@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
 
-import type { Route, TerrainPoint } from "./types";
+import type {
+  Route,
+  RouteOptimization,
+  TerrainPoint,
+  NavigationGrid,
+} from "./types";
+
+import { buildNavigationGrid } from "./pathfinding/buildNavigationGrid";
+import NavigationGridDebug from "./pathfinding/NavigationGridDebug";
 import ColumbusTerrain from "./ColumbusTerrain";
 import TerrainHUD from "./TerrainHUD";
 import HABMarker from "./HABMarker";
+import RouteMarker from "./RouteMarker";
+import GeneratedRoute from "./GeneratedRoute";
 
 function HoverMarker({ point }: { point: TerrainPoint | null }) {
   if (!point) return null;
@@ -126,8 +136,38 @@ export default function TerrainViewer() {
   const [waypointMode, setWaypointMode] = useState(false);
 
   const activeRoute = routes.find((route) => route.id === activeRouteId);
+  const [routeSelectionMode, setRouteSelectionMode] = useState<
+    "start" | "end" | null
+  >(null);
+
+  const [startPoint, setStartPoint] = useState<TerrainPoint | null>(null);
+
+  const [endPoint, setEndPoint] = useState<TerrainPoint | null>(null);
+
+  const [optimization, setOptimization] =
+    useState<RouteOptimization>("shortest");
+
+  const [routeGenerated, setRouteGenerated] = useState(false);
+
+  const [navigationGrid, setNavigationGrid] = useState<NavigationGrid | null>(
+    null,
+  );
 
   const handleTerrainClick = (point: TerrainPoint) => {
+    // Route planner selection
+    if (routeSelectionMode === "start") {
+      setStartPoint(point);
+      setRouteSelectionMode(null);
+      return;
+    }
+
+    if (routeSelectionMode === "end") {
+      setEndPoint(point);
+      setRouteSelectionMode(null);
+      return;
+    }
+
+    // Normal waypoint mode
     if (!waypointMode) return;
 
     setRoutes((currentRoutes) =>
@@ -186,6 +226,23 @@ export default function TerrainViewer() {
         routeDistance={routeDistance}
         onCreateRoute={createRoute}
         onClearRoute={clearActiveRoute}
+        routeSelectionMode={routeSelectionMode}
+        setRouteSelectionMode={setRouteSelectionMode}
+        startPoint={startPoint}
+        endPoint={endPoint}
+        optimization={optimization}
+        setOptimization={setOptimization}
+        onGenerateRoute={() => {
+          if (!startPoint || !endPoint) return;
+
+          console.log("Generating route:", {
+            startPoint,
+            endPoint,
+            optimization,
+          });
+
+          setRouteGenerated(true);
+        }}
       />
 
       <main className="min-w-0 flex-1">
@@ -211,6 +268,16 @@ export default function TerrainViewer() {
           <HABMarker position={HAB_POSITION} />
 
           <HoverMarker point={hoveredPoint} />
+          <RouteMarker point={startPoint} type="start" />
+
+          <RouteMarker point={endPoint} type="end" />
+
+          <GeneratedRoute
+            startPoint={startPoint}
+            endPoint={endPoint}
+            visible={routeGenerated}
+            color="cyan"
+          />
 
           {routes.map((route) => (
             <group key={route.id}>
