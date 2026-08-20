@@ -1,14 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
 
+import type { Route, TerrainPoint } from "./types";
 import ColumbusTerrain from "./ColumbusTerrain";
 import TerrainHUD from "./TerrainHUD";
-import type { TerrainPoint } from "./types";
 import HABMarker from "./HABMarker";
-
 
 function HoverMarker({ point }: { point: TerrainPoint | null }) {
   if (!point) return null;
@@ -29,7 +28,13 @@ function HoverMarker({ point }: { point: TerrainPoint | null }) {
   );
 }
 
-function Waypoints({ points }: { points: TerrainPoint[] }) {
+function Waypoints({
+  points,
+  color,
+}: {
+  points: TerrainPoint[];
+  color: string;
+}) {
   return (
     <>
       {points.map((point, index) => {
@@ -45,7 +50,7 @@ function Waypoints({ points }: { points: TerrainPoint[] }) {
             ]}
           >
             <sphereGeometry args={[0.12, 16, 16]} />
-            <meshBasicMaterial color="orange" />
+            <meshBasicMaterial color={color} />
           </mesh>
         );
       })}
@@ -53,7 +58,13 @@ function Waypoints({ points }: { points: TerrainPoint[] }) {
   );
 }
 
-function RouteLine({ points }: { points: TerrainPoint[] }) {
+function RouteLine({
+  points,
+  color,
+}: {
+  points: TerrainPoint[];
+  color: string;
+}) {
   if (points.length < 2) return null;
 
   const positions = points.map(
@@ -65,9 +76,8 @@ function RouteLine({ points }: { points: TerrainPoint[] }) {
       ] as [number, number, number],
   );
 
-  return <Line points={positions} color="orange" lineWidth={3} />;
+  return <Line points={positions} color={color} lineWidth={3} />;
 }
-
 
 function calculateRouteDistance(points: TerrainPoint[]) {
   let distance = 0;
@@ -86,7 +96,6 @@ function calculateRouteDistance(points: TerrainPoint[]) {
   return distance;
 }
 
-
 const HAB_POSITION: TerrainPoint = {
   x: 0,
   y: 0,
@@ -98,19 +107,72 @@ const HAB_POSITION: TerrainPoint = {
   },
 };
 
+const ROUTE_COLORS = ["orange", "cyan", "lime", "magenta", "yellow"];
+
 export default function TerrainViewer() {
   const [hoveredPoint, setHoveredPoint] = useState<TerrainPoint | null>(null);
 
-  const [waypoints, setWaypoints] = useState<TerrainPoint[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([
+    {
+      id: "route-1",
+      name: "EVA Route 1",
+      color: ROUTE_COLORS[0],
+      points: [],
+    },
+  ]);
+
+  const [activeRouteId, setActiveRouteId] = useState("route-1");
 
   const [waypointMode, setWaypointMode] = useState(false);
+
+  const activeRoute = routes.find((route) => route.id === activeRouteId);
 
   const handleTerrainClick = (point: TerrainPoint) => {
     if (!waypointMode) return;
 
-    setWaypoints((current) => [...current, point]);
+    setRoutes((currentRoutes) =>
+      currentRoutes.map((route) =>
+        route.id === activeRouteId
+          ? {
+              ...route,
+              points: [...route.points, point],
+            }
+          : route,
+      ),
+    );
   };
-  const routeDistance = calculateRouteDistance(waypoints);
+
+  const createRoute = () => {
+    const routeNumber = routes.length + 1;
+
+    const newRoute: Route = {
+      id: `route-${Date.now()}`,
+      name: `EVA Route ${routeNumber}`,
+      color: ROUTE_COLORS[routes.length % ROUTE_COLORS.length],
+      points: [],
+    };
+
+    setRoutes((current) => [...current, newRoute]);
+
+    setActiveRouteId(newRoute.id);
+  };
+
+  const clearActiveRoute = () => {
+    setRoutes((currentRoutes) =>
+      currentRoutes.map((route) =>
+        route.id === activeRouteId
+          ? {
+              ...route,
+              points: [],
+            }
+          : route,
+      ),
+    );
+  };
+
+  const routeDistance = activeRoute
+    ? calculateRouteDistance(activeRoute.points)
+    : 0;
 
   return (
     <div className="flex h-screen w-full bg-black text-white">
@@ -118,10 +180,14 @@ export default function TerrainViewer() {
         hoveredPoint={hoveredPoint}
         waypointMode={waypointMode}
         setWaypointMode={setWaypointMode}
-        waypointCount={waypoints.length}
+        routes={routes}
+        activeRouteId={activeRouteId}
+        setActiveRouteId={setActiveRouteId}
         routeDistance={routeDistance}
-        onClearRoute={() => setWaypoints([])}
+        onCreateRoute={createRoute}
+        onClearRoute={clearActiveRoute}
       />
+
       <main className="min-w-0 flex-1">
         <Canvas
           camera={{
@@ -146,9 +212,13 @@ export default function TerrainViewer() {
 
           <HoverMarker point={hoveredPoint} />
 
-          <Waypoints points={waypoints} />
+          {routes.map((route) => (
+            <group key={route.id}>
+              <Waypoints points={route.points} color={route.color} />
 
-          <RouteLine points={waypoints} />
+              <RouteLine points={route.points} color={route.color} />
+            </group>
+          ))}
 
           <OrbitControls target={[0, 0, 0]} enableDamping />
         </Canvas>

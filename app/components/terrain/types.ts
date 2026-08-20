@@ -23,3 +23,10 @@ export type TerrainHUDProps = {
   routeDistance: number;
   onClearRoute: () => void;
 };
+
+export type Route = {
+  id: string;
+  name: string;
+  color: string;
+  points: TerrainPoint[];
+};
