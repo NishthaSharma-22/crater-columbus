@@ -4,18 +4,17 @@ import { useEffect } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { ThreeEvent } from "@react-three/fiber";
-
-type TerrainPoint = {
-  x: number;
-  y: number;
-  z: number;
-};
+import type { TerrainPoint } from "./types";
 
 type ColumbusTerrainProps = {
   onHover: (point: TerrainPoint | null) => void;
+  onClick: (point: TerrainPoint) => void;
 };
 
-export default function ColumbusTerrain({ onHover }: ColumbusTerrainProps) {
+export default function ColumbusTerrain({
+  onHover,
+  onClick,
+}: ColumbusTerrainProps) {
   const { scene } = useGLTF("/models/columbus-crater.glb");
 
   useEffect(() => {
@@ -26,15 +25,53 @@ export default function ColumbusTerrain({ onHover }: ColumbusTerrainProps) {
   }, [scene]);
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (event.intersections.length === 0) {
+      onHover(null);
+      return;
+    }
+
+    const topIntersection = event.intersections.reduce((highest, current) =>
+      current.point.y > highest.point.y ? current : highest,
+    );
+
+    const normal = topIntersection.face?.normal ?? new THREE.Vector3(0, 1, 0);
+
     onHover({
-      x: event.point.x,
-      y: event.point.y,
-      z: event.point.z,
+      x: topIntersection.point.x,
+      y: topIntersection.point.y,
+      z: topIntersection.point.z,
+      normal: {
+        x: normal.x,
+        y: normal.y,
+        z: normal.z,
+      },
     });
   };
-
+  
   const handlePointerLeave = () => {
     onHover(null);
+  };
+
+  const handleClick = (event: ThreeEvent<MouseEvent>) => {
+    if (event.intersections.length === 0) return;
+
+    // Find the highest surface intersection.
+    const topIntersection = event.intersections.reduce((highest, current) =>
+      current.point.y > highest.point.y ? current : highest,
+    );
+
+    const normal = topIntersection.face?.normal ?? new THREE.Vector3(0, 1, 0);
+
+    onClick({
+      x: topIntersection.point.x,
+      y: topIntersection.point.y,
+      z: topIntersection.point.z,
+      normal: {
+        x: normal.x,
+        y: normal.y,
+        z: normal.z,
+      },
+    });
   };
 
   return (
@@ -42,6 +79,7 @@ export default function ColumbusTerrain({ onHover }: ColumbusTerrainProps) {
       object={scene}
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
+      onClick={handleClick}
     />
   );
 }
