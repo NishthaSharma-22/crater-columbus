@@ -1,3 +1,23 @@
+### columbus crater — mars analog mission terrain explorer
+
+a **next.js + three.js** 3d terrain explorer for **columbus crater on mars**, built for analog astronaut training and eva route planning.
+
+<img width="1839" height="973" alt="Screenshot 2026-10-06 213326" src="https://github.com/user-attachments/assets/dad4db30-7e05-4370-a9bf-242ec75ee6b7" />
+
+
+you can:
+
+* explore the crater in 3d and inspect its terrain, slopes, and elevation
+* see live **xyz coordinates** as you move across the terrain
+* place waypoints and build eva routes directly on the surface
+* create multiple named routes and compare them visually
+* generate routes between points using **a* pathfinding** with shortest, safest, longest, and balanced modes
+
+under the hood, the terrain is converted into a **navigation grid**, where cells are marked as walkable or unwalkable based on slope. the a* algorithm then finds routes through traversable terrain while accounting for elevation and terrain difficulty.
+
+basically, it is a 3d mission-planning tool that lets a crew get familiar with martian terrain and plan eva traverses before actually going out into the field.
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
